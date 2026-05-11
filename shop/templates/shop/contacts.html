@@ -1,0 +1,31 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+    <h1>Наши контакты</h1>
+    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+        {% for person in contacts %}
+            <div style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; width: 300px; background: #fff; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">
+
+                {% if person.photo %}
+                    <img src="{{ person.photo.url }}" alt="{{ person.full_name }}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 4px; margin-bottom: 10px;">
+                {% else %}
+                    <div style="width: 100%; height: 200px; background: #eee; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                        <span>Нет фото</span>
+                    </div>
+                {% endif %}
+
+                <h3 style="margin: 0 0 10px 0; color: #333;">{{ person.full_name }}</h3>
+
+                <p style="font-size: 0.9em; color: #666; font-style: italic;">
+                    <strong>Обязанности:</strong><br>
+                    {{ person.job_description }}
+                </p>
+
+                <p style="margin: 5px 0;"><strong>Тел:</strong> {{ person.phone }}</p>
+                <p style="margin: 5px 0;"><strong>Email:</strong> <a href="mailto:{{ person.email }}">{{ person.email }}</a></p>
+            </div>
+        {% empty %}
+            <p>Список сотрудников пуст.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+<style>
+    .register-container {
+        max-width: 500px;
+        margin: 40px auto;
+        padding: 35px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .register-container h2 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 25px;
+        font-size: 24px;
+        border-bottom: 2px solid #f1f1f1;
+        padding-bottom: 15px;
+    }
+    .form-group {
+        margin-bottom: 18px;
+    }
+    .form-group label {
+        font-weight: 600;
+        color: #34495e;
+        display: block;
+        margin-bottom: 5px;
+    }
+    /* Стилизация всех полей ввода */
+    .register-form input, .register-form select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-sizing: border-box;
+        transition: border-color 0.3s;
+    }
+    .register-form input:focus {
+        border-color: #3498db;
+        outline: none;
+        box-shadow: 0 0 5px rgba(52, 152, 219, 0.2);
+    }
+    .btn-register {
+        width: 100%;
+        background-color: #27ae60;
+        color: white;
+        padding: 14px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s;
+        margin-top: 15px;
+    }
+    .btn-register:hover {
+        background-color: #219150;
+    }
+    .login-link {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.95em;
+        color: #7f8c8d;
+    }
+    .login-link a {
+        color: #3498db;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    .error-msg {
+        color: #e74c3c;
+        font-size: 0.85em;
+        margin-top: 5px;
+        display: block;
+    }
+    .help-text {
+        color: #95a5a6;
+        display: block;
+        font-size: 0.8em;
+        margin-top: 4px;
+    }
+</style>
+
+<div class="register-container">
+    <h2>Создать аккаунт</h2>
+    <form method="post" class="register-form" id="regForm">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div style="background: #fdf2f2; border: 1px solid #e74c3c; padding: 10px; border-radius: 5px; margin-bottom: 15px; color: #e74c3c;">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+
+                {% if field.help_text %}
+                    <small class="help-text">{{ field.help_text }}</small>
+                {% endif %}
+
+                {% for error in field.errors %}
+                    <span class="error-msg">{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn-register">Зарегистрироваться</button>
+    </form>
+
+    <div class="login-link">
+        Уже есть аккаунт? <a href="{% url 'login' %}">Войти здесь</a>
+    </div>
+</div>
+
+<script src="https://unpkg.com/imask"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Ищем поле телефона (оно будет называться 'phone', если вы добавили его в ExtendedRegisterForm)
+        var phoneElement = document.querySelector('input[name="phone"]');
+        if (phoneElement) {
+            var phoneMask = IMask(phoneElement, {
+                mask: '+{375} (00) 000-00-00',
+                lazy: false // маска видна сразу
+            });
+        }
+    });
+</script>
+{% endblock %}

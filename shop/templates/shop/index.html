@@ -1,0 +1,18 @@
+{% extends 'shop/base.html' %}
+{% block content %}
+    <h1>Добро пожаловать в наш магазин!</h1>
+    
+    <h2>Последняя новость</h2>
+    {% if latest_news %}
+        <div style="border: 1px solid #ddd; padding: 15px;">
+            <h3>{{ latest_news.title }}</h3>
+            <p>{{ latest_news.content|truncatewords:30 }}</p>
+            <small>Опубликовано: {{ latest_news.publish_date }}</small>
+        </div>
+    {% else %}
+        <p>Новостей пока нет.</p>
+    {% endif %}
+
+    <h3>Календарь на Май 2026</h3>
+    <pre>{{ calendar_text }}</pre>
+{% endblock %}

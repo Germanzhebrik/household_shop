@@ -1,0 +1,40 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+    <h1>Отчет по базе клиентов</h1>
+    <p>Доступ: Только для персонала</p>
+
+    <table border="1" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background-color: #eee;">
+                <th>Логин (Аккаунт)</th> <th>ФИО Клиента</th>
+                <th>Город</th>
+                <th>Возраст</th>
+                <th>Телефон</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for customer in customers %}
+            <tr>
+                <td style="padding: 8px;">
+                    {% if customer.user %}
+                        <strong>{{ customer.user.username }}</strong>
+                    {% else %}
+                        <span style="color: red;">Нет аккаунта</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 8px;">{{ customer.full_name }}</td>
+                <td style="padding: 8px;">{{ customer.city }}</td>
+                <td style="padding: 8px;">{{ customer.age }}</td>
+                <td style="padding: 8px;">{{ customer.phone }}</td>
+                <td style="padding: 8px;">{{ customer.email }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 20px;">В базе данных нет зарегистрированных клиентов.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

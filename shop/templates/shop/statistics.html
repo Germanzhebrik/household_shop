@@ -1,0 +1,16 @@
+{% extends 'shop/base.html' %}
+{% block content %}
+    <h1>Аналитика магазина</h1>
+    <div style="background: #eef; padding: 20px; border-radius: 8px;">
+        <p><strong>Средний возраст наших клиентов:</strong> {{ avg_age|floatformat:1 }} лет</p>
+        <p><strong>Общая сумма всех заказов:</strong> {{ total_sales|default:"0" }} руб.</p>
+        <p><strong>Самый продаваемый товар:</strong> {{ popular_product.title|default:"Нет данных" }}</p>
+    </div>
+
+    <h2>Прибыль по категориям</h2>
+    <ul>
+        {% for cat in category_profit %}
+            <li>{{ cat.name }}: {{ cat.profit|default:"0" }} руб.</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+    <h1>Промокоды и акции</h1>
+    
+    <h2>Действующие акции</h2>
+    <ul>
+        {% for promo in active %}
+            <li><strong>{{ promo.code }}</strong> — {{ promo.description }}</li>
+        {% empty %}
+            <li>Активных промокодов сейчас нет.</li>
+        {% endfor %}
+    </ul>
+
+    <hr>
+    <h2 style="color: gray;">Архив акций</h2>
+    <ul style="color: gray;">
+        {% for promo in archived %}
+            <li><del>{{ promo.code }}</del> (акция завершена)</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+<style>
+    .login-container {
+        max-width: 400px;
+        margin: 60px auto;
+        padding: 40px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .login-container h2 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 30px;
+        font-size: 26px;
+        font-weight: 600;
+    }
+
+    .login-form p {
+        margin-bottom: 20px;
+    }
+
+    /* Стилизация меток полей */
+    .login-form label {
+        display: block;
+        margin-bottom: 8px;
+        color: #34495e;
+        font-weight: 500;
+    }
+
+    /* Стилизация полей ввода Django */
+    .login-form input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #dcdde1;
+        border-radius: 8px;
+        box-sizing: border-box;
+        font-size: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .login-form input:focus {
+        border-color: #3498db;
+        outline: none;
+        box-shadow: 0 0 8px rgba(52, 152, 219, 0.2);
+        background-color: #f8faff;
+    }
+
+    .btn-login {
+        width: 100%;
+        background-color: #3498db;
+        color: white;
+        padding: 14px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.1s;
+        margin-top: 10px;
+    }
+
+    .btn-login:hover {
+        background-color: #2980b9;
+    }
+
+    .btn-login:active {
+        transform: scale(0.98);
+    }
+
+    .register-link {
+        text-align: center;
+        margin-top: 25px;
+        font-size: 0.95em;
+        color: #7f8c8d;
+    }
+
+    .register-link a {
+        color: #3498db;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .register-link a:hover {
+        text-decoration: underline;
+    }
+
+    /* Ошибки валидации */
+    .error-box {
+        background-color: #fdf2f2;
+        color: #e74c3c;
+        padding: 12px;
+        border-radius: 8px;
+        border-left: 4px solid #e74c3c;
+        margin-bottom: 20px;
+        font-size: 0.9em;
+    }
+</style>
+
+<div class="login-container">
+    <h2>Вход в аккаунт</h2>
+
+    {% if form.errors %}
+        <div class="error-box">
+            Неверное имя пользователя или пароль. Пожалуйста, попробуйте еще раз.
+        </div>
+    {% endif %}
+
+    <form method="post" class="login-form">
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn-login">Войти</button>
+    </form>
+
+    <div class="register-link">
+        Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a>
+    </div>
+</div>
+{% endblock %}

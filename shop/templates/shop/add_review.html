@@ -1,0 +1,11 @@
+{% extends 'shop/base.html' %}
+{% block content %}
+    <h1>Оставить отзыв</h1>
+    <form method="post">
+        {% csrf_token %}
+        <p>Ваше имя:<br><input type="text" name="name" required></p>
+        <p>Ваш отзыв:<br><textarea name="text" required></textarea></p>
+        <p>Оценка (1-5):<br><input type="number" name="rating" min="1" max="5" value="5"></p>
+        <button type="submit">Отправить отзыв</button>
+    </form>
+{% endblock %}

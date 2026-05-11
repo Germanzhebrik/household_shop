@@ -1,0 +1,17 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+    <h1>Часто задаваемые вопросы (FAQ)</h1>
+    <div class="faq-section">
+        {% for item in faqs %}
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #2c3e50;">Q: {{ item.question }}</h3>
+                <p style="background: #f9f9f9; padding: 10px; border-left: 5px solid #3498db;">
+                    <strong>A:</strong> {{ item.answer }}
+                </p>
+            </div>
+        {% empty %}
+            <p>Раздел FAQ пуст.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

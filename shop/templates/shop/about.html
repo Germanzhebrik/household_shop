@@ -1,0 +1,20 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+    <h1>О нашей компании</h1>
+    {% if info %}
+        <div class="company-info">
+            <p>{{ info.description|linebreaks }}</p>
+            {% if info.logo %}
+                <img src="{{ info.logo.url }}" alt="Логотип" style="max-width: 200px;">
+            {% endif %}
+            {% if info.video_url %}
+                <div style="margin-top: 20px;">
+                    <a href="{{ info.video_url }}" target="_blank">Смотреть видео о нас</a>
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <p>Информация о компании пока не заполнена.</p>
+    {% endif %}
+{% endblock %}

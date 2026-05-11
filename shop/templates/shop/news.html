@@ -1,0 +1,16 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+    <h1>Новости магазина</h1>
+    <div class="news-list">
+        {% for article in news %}
+            <div style="border-bottom: 1px solid #eee; margin-bottom: 20px; padding-bottom: 10px;">
+                <h3>{{ article.title }}</h3>
+                <p>{{ article.content|truncatewords:50 }}</p>
+                <small>Дата публикации: {{ article.publish_date|date:"d.m.Y" }}</small>
+            </div>
+        {% empty %}
+            <p>Новостей пока нет.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

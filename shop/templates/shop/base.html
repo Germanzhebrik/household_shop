@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Магазин бытовой химии</title>
+    <style>
+        /* Базовые стили */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; line-height: 1.6; color: #333; background-color: #f9f9f9; }
+
+        /* Навигация */
+        nav {
+            background: #2c3e50;
+            padding: 15px 25px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .nav-links a { margin-right: 20px; text-decoration: none; color: #ecf0f1; font-weight: 500; transition: 0.3s; }
+        .nav-links a:hover { color: #3498db; }
+
+        /* Блок пользователя (Авторизация) */
+        .auth-block { color: #fff; font-size: 0.9em; display: flex; align-items: center; gap: 15px; }
+        .auth-block button {
+            background: #e74c3c; color: white; border: none; padding: 5px 12px;
+            border-radius: 4px; cursor: pointer; font-size: 0.9em;
+        }
+        .auth-block a { color: #3498db; text-decoration: none; font-weight: bold; }
+
+        /* Контентная область */
+        .content { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); min-height: 400px; }
+
+        /* Таблицы */
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; background: #fff; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+
+        /* Подвал */
+        .footer {
+            margin-top: 50px;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.85em;
+            color: #7f8c8d;
+            border-top: 1px solid #eee;
+        }
+        .footer-links { margin-bottom: 10px; }
+        .footer-links a { margin: 0 10px; color: #34495e; text-decoration: none; }
+        #weather { font-weight: bold; color: #2980b9; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-links">
+            <a href="{% url 'index' %}">Главная</a>
+            <a href="{% url 'product_list' %}">Товары</a>
+            <a href="{% url 'news_list' %}">Новости</a>
+            <a href="{% url 'about' %}">О компании</a>
+            <a href="{% url 'promo_codes' %}">Промокоды</a>
+            <a href="{% url 'vacancy_list' %}">Вакансии</a>
+            <a href="{% url 'reviews' %}">Отзывы</a>
+
+            {% if user.is_staff %}
+                <a href="{% url 'statistics' %}" style="color: #f1c40f; margin-left: 10px;">📊 Статистика</a>
+                <a href="{% url 'customer_report' %}" style="color: #f1c40f;">📋 Отчет</a>
+            {% endif %}
+        </div>
+
+        <div class="auth-block">
+            {% if user.is_authenticated %}
+                <span>Привет, <strong>{{ user.username }}</strong>!</span>
+                <form action="{% url 'logout' %}" method="post" style="display:inline; margin-left:10px;">
+                    {% csrf_token %}
+                            <button type="submit" style="background:none; border:none; color:#ecf0f1; cursor:pointer; text-decoration:underline; font-family:inherit; font-size:inherit;">
+                        Выйти
+                    </button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}" style="color: #ecf0f1; text-decoration: none;">Войти</a> |
+                <a href="{% url 'register' %}" style="color: #ecf0f1; text-decoration: none;">Регистрация</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <div class="footer">
+        <div class="footer-info">
+            <p>UTC: {{ current_utc|date:"d/m/Y H:i" }}</p>
+            <p>Ваше время: {{ current_local|date:"d/m/Y H:i" }} (Таймзона: {{ user_tz }})</p>
+
+        </div>
+        <div class="footer-links">
+            <a href="{% url 'privacy_policy' %}">Политика конфиденциальности</a> |
+            <a href="{% url 'faq_list' %}">FAQ</a> |
+            <a href="{% url 'contact_list' %}">Контакты</a>
+        </div>
+        <p id="joke-container" style="font-style: italic; color: #2c3e50;">🤖 Загрузка шутки...</p>
+        <div id="weather">🌤️ Загрузка погоды...</div>
+    </div>
+
+    <script>
+        // AJAX-запрос к вашему view для получения погоды
+        fetch('/weather/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.temp !== "Н/Д") {
+                    document.getElementById('weather').innerText = `🌡️ Погода в г. ${data.city}: ${data.temp}°C`;
+                } else {
+                    document.getElementById('weather').innerText = `Погода временно недоступна`;
+                }
+            })
+            .catch(err => {
+                console.error('Ошибка погоды:', err);
+                document.getElementById('weather').innerText = '';
+            });
+            // Обращаемся к эндпоинту с шутками про программирование
+        fetch('https://official-joke-api.appspot.com/jokes/programming/random')
+        .then(response => response.json())
+        .then(data => {
+            // API возвращает массив, берем первый (и единственный) элемент
+            const joke = data[0];
+            document.getElementById('joke-container').innerText = `🤖 ${joke.setup} — ${joke.punchline}`;
+        })
+        .catch(err => {
+            console.error('Ошибка загрузки шутки:', err);
+            document.getElementById('joke-container').innerText = 'Шутки кончились, пора возвращаться к коду!';
+        });
+    </script>
+</body>
+</html>
