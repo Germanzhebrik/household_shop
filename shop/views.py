@@ -1,5 +1,8 @@
 import logging
 import requests
+import matplotlib.pyplot as plt
+import io
+import base64
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Avg, Sum, Count, Max, StdDev, F, Q
@@ -92,54 +95,44 @@ def faq_list(request):
 
 @user_passes_test(is_employee)
 def statistics_view(request):
-    """Статистические показатели по предметной области"""
+    # --- Сценарий А: Распределение товаров по категориям (Круговая диаграмма) ---
+    category_data = Category.objects.annotate(total_products=Count('products'))
+    labels = [c.name for c in category_data]
+    values = [c.total_products for c in category_data]
 
-    # 1. Клиенты
-    # Средний возраст
-    avg_age = Customer.objects.aggregate(Avg('age'))['age__avg']
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.pie(values, labels=labels, autopct='%1.1f%%', startangle=140)
+    ax.set_title("Распределение товаров по категориям")
 
-    # Медиана возраста (считаем на уровне Python, так как в ORM нет встроенной медианы)
-    ages = list(Customer.objects.values_list('age', flat=True).order_by('age'))
-    median_age = 0
-    if ages:
-        mid = len(ages) // 2
-        median_age = (ages[mid] + ages[mid - 1]) / 2 if len(ages) % 2 == 0 else ages[mid]
+    # Сохраняем график в буфер
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close(fig)
+    chart_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
 
-    # 2. продажи (суммы)
-    # Общая сумма продаж (Цена * Количество)
-    total_sales = Order.objects.aggregate(
-        total=Sum(F('product__price') * F('quantity'))
-    )['total'] or 0
+    # --- Сценарий Б: Динамика заказов (Линейный график) ---
+    # Группируем заказы по дате (created_at)
+    order_stats = Order.objects.values('created_at__date').annotate(count=Count('id')).order_by('created_at__date')
+    dates = [str(item['created_at__date']) for item in order_stats]
+    counts = [item['count'] for item in order_stats]
 
-    #3. Товары и категории
-    # Самый популярный товар (по количеству проданных единиц)
-    popular_product = Product.objects.annotate(
-        total_sold=Sum('order__quantity')
-    ).order_by('-total_sold').first()
+    fig2, ax2 = plt.subplots(figsize=(8, 4))
+    ax2.plot(dates, counts, marker='o', linestyle='-', color='b')
+    ax2.set_title("Динамика заказов по датам")
+    ax2.set_xlabel("Дата")
+    ax2.set_ylabel("Количество заказов")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
 
-    # Товар, не пользующийся спросом (ни одного заказа) - из таблицы требований
-    unpopular_products = Product.objects.filter(order__isnull=True)
+    buf2 = io.BytesIO()
+    plt.savefig(buf2, format='png')
+    plt.close(fig2)
+    line_chart_base64 = base64.b64encode(buf2.getvalue()).decode('utf-8')
 
-    # Какой тип товаров (категория) наиболее популярен? (по количеству продаж)
-    popular_category = Category.objects.annotate(
-        total_sold=Sum('products__order__quantity')
-    ).order_by('-total_sold').first()
-
-    # Какой тип товаров приносит наибольшую прибыль? (Цена * Количество в заказах)
-    category_profit = Category.objects.annotate(
-        profit=Sum(F('products__order__quantity') * F('products__price'))
-    ).order_by('-profit')
-
-    context = {
-        'avg_age': round(avg_age, 1) if avg_age else 0,
-        'median_age': median_age,
-        'total_sales': total_sales,
-        'popular_product': popular_product,
-        'unpopular_products': unpopular_products,
-        'popular_category': popular_category,
-        'category_profit': category_profit,
-    }
-    return render(request, 'shop/statistics.html', context)
+    return render(request, 'shop/statistics.html', {
+        'pie_chart': chart_base64,
+        'line_chart': line_chart_base64
+    })
 
 
 ### 3. РАБОТА С КЛИЕНТАМИ И ТОВАРАМИ (CRUD & Поиск) ###
