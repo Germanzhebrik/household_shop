@@ -5,6 +5,7 @@ urlpatterns = [
     re_path(r'^$', views.index, name='index'),
     re_path(r'^products/$', views.product_list, name='product_list'),
     re_path(r'^statistics/$', views.statistics_view, name='statistics'),
+    re_path(r'^charts/$', views.charts_view, name='charts'),
     re_path(r'^about/$', views.about, name='about'),
     re_path(r'^news/$', views.news_list, name='news_list'),
     re_path(r'^faq/$', views.faq_list, name='faq_list'),

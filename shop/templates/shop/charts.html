@@ -1,0 +1,18 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+<h2>Визуализация данных</h2>
+<a href="{% url 'statistics' %}">← Назад к показателям</a>
+
+<div style="margin-top: 20px; display: flex; flex-direction: column; gap: 40px;">
+    <div style="background: white; padding: 15px; border-radius: 8px;">
+        <h3>Распределение товаров по категориям</h3>
+        <img src="data:image/png;base64,{{ pie_chart }}" style="max-width: 100%;">
+    </div>
+
+    <div style="background: white; padding: 15px; border-radius: 8px;">
+        <h3>Активность заказов по датам</h3>
+        <img src="data:image/png;base64,{{ line_chart }}" style="max-width: 100%;">
+    </div>
+</div>
+{% endblock %}

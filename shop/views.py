@@ -14,6 +14,7 @@ from django.contrib.auth import login
 from .forms import ExtendedRegisterForm
 from django.contrib import messages
 import calendar
+from statistics import mode, StatisticsError
 
 from .models import (
     Product, Customer, Order, News, AboutCompany,
@@ -95,7 +96,44 @@ def faq_list(request):
 
 @user_passes_test(is_employee)
 def statistics_view(request):
-    # --- Сценарий А: Распределение товаров по категориям (Круговая диаграмма) ---
+    # 1. Показатели по сумме продаж
+    orders = Order.objects.annotate(total_item_price=F('product__price') * F('quantity'))
+    prices = list(orders.values_list('total_item_price', flat=True))
+
+    avg_sales = sum(prices) / len(prices) if prices else 0
+    median_sales = sorted(prices)[len(prices) // 2] if prices else 0
+    try:
+        mode_sales = mode(prices)
+    except StatisticsError:
+        mode_sales = "Н/Д"
+
+    # 2. Показатели по возрасту клиентов
+    ages = list(Customer.objects.values_list('age', flat=True))
+    avg_age = sum(ages) / len(ages) if ages else 0
+    median_age = sorted(ages)[len(ages) // 2] if ages else 0
+
+    # 3. Самый популярный тип товара (по количеству проданных единиц)
+    popular_cat = Category.objects.annotate(sold_count=Sum('products__order__quantity')) \
+        .order_by('-sold_count').first()
+
+    # 4. Самый прибыльный тип товара (по сумме выручки)
+    profitable_cat = Category.objects.annotate(revenue=Sum(F('products__order__quantity') * F('products__price'))) \
+        .order_by('-revenue').first()
+
+    context = {
+        'avg_sales': avg_sales,
+        'median_sales': median_sales,
+        'mode_sales': mode_sales,
+        'avg_age': avg_age,
+        'median_age': median_age,
+        'popular_category': popular_cat,
+        'profitable_category': profitable_cat,
+    }
+    return render(request, 'shop/statistics.html', context)
+
+@user_passes_test(is_employee)
+def charts_view(request):
+    # График распределения по категориям
     category_data = Category.objects.annotate(total_products=Count('products'))
     labels = [c.name for c in category_data]
     values = [c.total_products for c in category_data]
@@ -104,34 +142,30 @@ def statistics_view(request):
     ax.pie(values, labels=labels, autopct='%1.1f%%', startangle=140)
     ax.set_title("Распределение товаров по категориям")
 
-    # Сохраняем график в буфер
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     plt.close(fig)
-    chart_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+    pie_chart = base64.b64encode(buf.getvalue()).decode('utf-8')
 
-    # --- Сценарий Б: Динамика заказов (Линейный график) ---
-    # Группируем заказы по дате (created_at)
+    # Линейный график заказов
     order_stats = Order.objects.values('created_at__date').annotate(count=Count('id')).order_by('created_at__date')
     dates = [str(item['created_at__date']) for item in order_stats]
     counts = [item['count'] for item in order_stats]
 
     fig2, ax2 = plt.subplots(figsize=(8, 4))
-    ax2.plot(dates, counts, marker='o', linestyle='-', color='b')
-    ax2.set_title("Динамика заказов по датам")
-    ax2.set_xlabel("Дата")
-    ax2.set_ylabel("Количество заказов")
+    ax2.plot(dates, counts, marker='o', color='g')
+    ax2.set_title("Динамика заказов")
     plt.xticks(rotation=45)
     plt.tight_layout()
 
     buf2 = io.BytesIO()
     plt.savefig(buf2, format='png')
     plt.close(fig2)
-    line_chart_base64 = base64.b64encode(buf2.getvalue()).decode('utf-8')
+    line_chart = base64.b64encode(buf2.getvalue()).decode('utf-8')
 
-    return render(request, 'shop/statistics.html', {
-        'pie_chart': chart_base64,
-        'line_chart': line_chart_base64
+    return render(request, 'shop/charts.html', {
+        'pie_chart': pie_chart,
+        'line_chart': line_chart
     })
 
 

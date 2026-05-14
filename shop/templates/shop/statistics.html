@@ -1,17 +1,20 @@
 {% extends 'shop/base.html' %}
 
 {% block content %}
-<h2>Статистика магазина</h2>
+<h2>Статистические показатели</h2>
+<div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <p><strong>Средняя сумма продажи:</strong> {{ avg_sales|floatformat:2 }} руб.</p>
+    <p><strong>Медиана продаж:</strong> {{ median_sales }} руб.</p>
+    <p><strong>Мода продаж:</strong> {{ mode_sales }} руб.</p>
+    <hr>
+    <p><strong>Средний возраст клиента:</strong> {{ avg_age|floatformat:1 }} лет</p>
+    <p><strong>Медиана возраста:</strong> {{ median_age }} лет</p>
+    <hr>
+    <p><strong>Самый популярный тип товаров:</strong> {{ popular_category.name|default:"Нет данных" }}</p>
+    <p><strong>Самый прибыльный тип товаров:</strong> {{ profitable_category.name|default:"Нет данных" }}</p>
 
-<div style="display: flex; flex-wrap: wrap; gap: 20px;">
-    <div>
-        <h3>Категории</h3>
-        <img src="data:image/png;base64,{{ pie_chart }}" alt="Диаграмма категорий">
-    </div>
-
-    <div>
-        <h3>Активность заказов</h3>
-        <img src="data:image/png;base64,{{ line_chart }}" alt="График заказов">
+    <div style="margin-top: 20px;">
+        <a href="{% url 'charts' %}" style="padding: 10px 15px; background: #3498db; color: white; text-decoration: none; border-radius: 4px;">Смотреть графики</a>
     </div>
 </div>
 {% endblock %}
