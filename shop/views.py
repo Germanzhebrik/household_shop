@@ -14,7 +14,7 @@ import calendar
 
 from .models import (
     Product, Customer, Order, News, AboutCompany,
-    FAQ, Contact, Vacancy, Review, PromoCode, Category
+    FAQ, Contact, Vacancy, Review, PromoCode, Category, CartItem
 )
 
 # Настройка логирования
@@ -244,25 +244,116 @@ def register(request):
     if request.method == 'POST':
         form = ExtendedRegisterForm(request.POST)
         if form.is_valid():
-            # 1. Создаем системного пользователя (User)
+            # 1. Сохраняем пользователя.
+            # Сигнал post_save автоматически создаст Customer с дефолтными полями.
             user = form.save(commit=False)
             user.set_password(form.cleaned_data['password'])
             user.save()
 
-            # 2. Создаем связанную запись в вашей модели Customer
-            Customer.objects.create(
-                user=user,  # Привязываем к аккаунту
-                full_name=f"{form.cleaned_data['first_name']} {form.cleaned_data['last_name']}",
-                email=form.cleaned_data['email'],
-                phone=form.cleaned_data['phone'],
-                age=form.cleaned_data['age'],
-                city=form.cleaned_data['city']
-            )
+            # 2. Теперь просто обновляем Customer данными из формы.
+            # Благодаря сигналам, email и имя в User обновятся сами,
+            # если вы измените их в customer.
+            customer = user.customer
+            customer.full_name = f"{form.cleaned_data['first_name']} {form.cleaned_data['last_name']}"
+            customer.email = form.cleaned_data['email']
+            customer.phone = form.cleaned_data['phone']
+            customer.age = form.cleaned_data['age']
+            customer.city = form.cleaned_data['city']
+            customer.save()
 
-            login(request, user)  # Автоматический вход
-            logger.info(f"Новый пользователь зарегистрирован: {user.username}")
+            login(request, user)
             return redirect('index')
     else:
         form = ExtendedRegisterForm()
-        logger.warning(f"Ошибка регистрации: {form.errors.as_json()}")
-    return render(request, 'registration/register.html', {'form': form})
+    return render(request, 'shop/register.html', {'form': form})
+
+
+@login_required
+def add_to_cart(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    customer = request.user.customer
+
+    # Получаем количество из POST-запроса.
+    # Если это не POST (например, прямой переход по ссылке), ставим 1.
+    if request.method == 'POST':
+        qty = int(request.POST.get('quantity', 1))
+    else:
+        qty = 1
+
+    cart_item, created = CartItem.objects.get_or_create(customer=customer, product=product)
+
+    if not created:
+        cart_item.quantity += qty  # Прибавляем выбранное количество
+    else:
+        cart_item.quantity = qty  # Устанавливаем выбранное количество
+
+    cart_item.save()
+    messages.success(request, f"Товар {product.title} (x{qty}) добавлен в корзину.")
+    return redirect('product_list')
+
+
+@login_required
+def view_cart(request):
+    customer = request.user.customer
+    cart_items = customer.cart_items.all()
+    total_price = sum(item.product.price * item.quantity for item in cart_items)
+    return render(request, 'shop/cart.html', {'cart_items': cart_items, 'total_price': total_price})
+
+
+@login_required
+def checkout(request):
+    customer = request.user.customer
+    cart_items = customer.cart_items.all()
+
+    if not cart_items:
+        return redirect('product_list')
+
+    if request.method == 'POST':
+        promo_text = request.POST.get('promo_code', '').strip()
+        promo_obj = None
+
+        # Проверка: существует ли такой код в базе и не в архиве ли он
+        if promo_text:
+            promo_obj = PromoCode.objects.filter(code=promo_text, is_archived=False).first()
+
+            if promo_text and not promo_obj:
+                messages.error(request, f"Промокод '{promo_text}' не найден или недействителен.")
+                # Можно прервать оформление или просто проигнорировать код
+                # Если хотим дать пользователю шанс исправить — возвращаем на страницу корзины
+                return redirect('view_cart')
+            elif promo_obj:
+                messages.success(request, f"Промокод '{promo_obj.code}' успешно применен!")
+
+        # Создаем заказы
+        for item in cart_items:
+            Order.objects.create(
+                customer=customer,
+                product=item.product,
+                quantity=item.quantity,
+                # Сохраняем текст промокода только если он прошел проверку
+                promo_code=promo_obj.code if promo_obj else None,
+                delivery_date=timezone.now() + timezone.timedelta(days=3)
+            )
+
+        # Очищаем корзину после успешного оформления
+        cart_items.delete()
+        messages.success(request, "Заказ успешно оформлен!")
+        return redirect('product_list')
+
+    return render(request, 'shop/cart.html', {'cart_items': cart_items})
+
+@login_required
+def remove_from_cart(request, item_id):
+    # Удаляем конкретный товар из корзины текущего пользователя
+    cart_item = get_object_or_404(CartItem, id=item_id, customer=request.user.customer)
+    product_title = cart_item.product.title
+    cart_item.delete()
+    messages.success(request, f"Товар {product_title} удален из корзины.")
+    return redirect('view_cart')
+
+@login_required
+def clear_cart(request):
+    # Удаляем все товары из корзины текущего пользователя
+    request.user.customer.cart_items.all().delete()
+    messages.success(request, "Корзина полностью очищена.")
+    return redirect('view_cart')

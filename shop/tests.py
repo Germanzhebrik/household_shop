@@ -46,7 +46,6 @@ class RegistrationTest(TestCase):
         """Проверка создания User и Customer при заполнении формы"""
 
         # 1. Подготавливаем данные, которые имитируют ввод пользователя в форму
-        # Убедитесь, что имена полей совпадают с теми, что в вашей ExtendedRegisterForm
         form_data = {
             'username': 'ivan_test',
             'first_name': 'Иван',
@@ -60,7 +59,6 @@ class RegistrationTest(TestCase):
         }
 
         # 2. Отправляем POST-запрос на URL регистрации
-        # reverse('register') берет имя из вашего urls.py
         response = self.client.post(reverse('register'), data=form_data)
 
         # 3. ПРОВЕРКИ

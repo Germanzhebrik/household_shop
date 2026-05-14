@@ -1,6 +1,8 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 # Create your models here.
 
 class TimeStampedModel(models.Model):
@@ -71,6 +73,15 @@ class Customer(TimeStampedModel):
     def __str__(self):
         return self.full_name
 
+class CartItem(TimeStampedModel): # Корзина
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='cart_items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        verbose_name = "Товар в корзине"
+        verbose_name_plural = "Товары в корзине"
+
 # 5. Заказ (Связь Многие-ко-Многим через таблицу Заказов)
 class Order(TimeStampedModel):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
@@ -78,6 +89,8 @@ class Order(TimeStampedModel):
     quantity = models.PositiveIntegerField(default=1)
     order_date = models.DateTimeField(auto_now_add=True)
     delivery_date = models.DateTimeField(null=True, blank=True)
+    promo_code = models.CharField(max_length=50, blank=True, null=True, verbose_name="Использованный промокод")
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Сумма скидки")
 
     class Meta:
         verbose_name = "Заказ"
@@ -172,3 +185,69 @@ class PromoCode(TimeStampedModel):
 
     class Meta:
         verbose_name_plural = "Промокоды и купоны"
+
+# Сигналы для автоматического создания Customer
+@receiver(post_save, sender=User)
+def create_customer_profile(sender, instance, created, **kwargs):
+    if created:
+        # Создаем профиль клиента.
+        # Если это регистрация через форму, данные будут обновлены позже в view.
+        # Если через админку — создастся запись с дефолтными значениями.
+        Customer.objects.get_or_create(
+            user=instance,
+            defaults={
+                'full_name': instance.get_full_name() or instance.username,
+                'email': instance.email or "",
+                'city': "",
+                'phone': "",
+                'age': 18
+            }
+        )
+
+@receiver(post_save, sender=User)
+def save_customer_profile(sender, instance, **kwargs):
+    if hasattr(instance, 'customer'):
+        instance.customer.save()
+
+
+@receiver(post_save, sender=User)
+def sync_user_with_customer(sender, instance, created, **kwargs):
+    if created:
+        # Создаем профиль, если пользователя только что зарегистрировали
+        Customer.objects.get_or_create(
+            user=instance,
+            defaults={
+                'full_name': f"{instance.first_name} {instance.last_name}".strip() or instance.username,
+                'email': instance.email or "не указан",
+                'city': "Не указан",
+                'phone': "+375 (00) 000-00-00",
+                'age': 18
+            }
+        )
+    else:
+        # Если пользователя обновили (например, в админке), синхронизируем данные в Customer
+        if hasattr(instance, 'customer'):
+            customer = instance.customer
+            new_full_name = f"{instance.first_name} {instance.last_name}".strip() or instance.username
+
+            # Обновляем, только если данные действительно изменились, чтобы избежать бесконечного цикла
+            if customer.full_name != new_full_name or customer.email != instance.email:
+                customer.full_name = new_full_name
+                customer.email = instance.email
+                customer.save()
+
+
+@receiver(post_save, sender=Customer)
+def sync_customer_with_user(sender, instance, created, **kwargs):
+    # Если мы обновили данные в модели Customer, нужно обновить их и в User
+    if not created:  # При создании пропускаем, чтобы не конфликтовать с сигналом User
+        user = instance.user
+        name_parts = instance.full_name.split(' ', 1)
+        first_name = name_parts[0]
+        last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+        if user.first_name != first_name or user.last_name != last_name or user.email != instance.email:
+            user.first_name = first_name
+            user.last_name = last_name
+            user.email = instance.email
+            user.save()

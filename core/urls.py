@@ -23,7 +23,6 @@ urlpatterns = [
     re_path(r'^admin/', admin.site.urls),
     re_path(r'^', include('shop.urls')),
     re_path(r'^accounts/', include('django.contrib.auth.urls')),
-
 ]
 
 if settings.DEBUG:

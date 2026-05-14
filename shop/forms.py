@@ -11,7 +11,7 @@ class ExtendedRegisterForm(forms.ModelForm):
     email = forms.EmailField(label="Электронная почта",
                              widget=forms.EmailInput(attrs={'placeholder': 'example@mail.com'}))
 
-    # Поле для города (важно для вашего отчета в лабе)
+    # Поле для города
     city = forms.CharField(label="Город", max_length=100, widget=forms.TextInput(attrs={'placeholder': 'Минск'}))
 
     # Поле телефона с подсказкой

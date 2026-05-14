@@ -17,4 +17,9 @@ urlpatterns = [
     re_path(r'^privacy/$', views.privacy_policy, name='privacy_policy'),
     re_path(r'^register/$', views.register, name='register'),
     re_path(r'^buy/(?P<product_id>\d+)/$', views.buy_product, name='buy_product'),
+    re_path(r'^cart/$', views.view_cart, name='view_cart'),
+    re_path(r'^cart/add/(?P<product_id>\d+)/$', views.add_to_cart, name='add_to_cart'),
+    re_path(r'^cart/checkout/$', views.checkout, name='checkout'),
+    re_path(r'^cart/remove/(?P<item_id>\d+)/$', views.remove_from_cart, name='remove_from_cart'),
+    re_path(r'^cart/clear/$', views.clear_cart, name='clear_cart'),
 ]

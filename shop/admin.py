@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
 from .models import (
     Manufacturer, Category, Product, Customer,
     Order, Employee, AboutCompany, News,
@@ -12,13 +14,32 @@ class OrderInline(admin.TabularInline):
     extra = 1
     fields = ('product', 'quantity', 'delivery_date')
 
+class CustomerInline(admin.StackedInline):
+    model = Customer
+    can_delete = False
+    verbose_name_plural = 'Данные профиля (Клиент)'
+    fk_name = 'user'
+
+class UserAdmin(BaseUserAdmin):
+    inlines = (CustomerInline,)
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'get_city')
+
+    def get_city(self, instance):
+        return instance.customer.city if hasattr(instance, 'customer') else '-'
+
+    get_city.short_description = 'Город'
+
+# Перерегистрация User
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
+
 # Admin Classes
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ('full_name', 'city', 'email', 'phone', 'age')
-    list_filter = ('city',)  # Required: Filtering by city
-    search_fields = ('full_name', 'email', 'phone')  # Required: Search functionality
-    inlines = [OrderInline]  # Required: Inline editing for related records
+    list_filter = ('city',)
+    search_fields = ('full_name', 'email', 'phone')
+    inlines = [OrderInline]
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -29,9 +50,9 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'customer', 'product', 'quantity', 'order_date', 'delivery_date')
-    list_filter = ('order_date', 'delivery_date')
-    date_hierarchy = 'order_date' # Adds a date navigation bar at the top
+    list_display = ('id', 'customer', 'product', 'quantity', 'created_at', 'delivery_date')
+    list_filter = ('created_at', 'delivery_date')
+    date_hierarchy = 'created_at'
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):

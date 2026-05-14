@@ -1,0 +1,4 @@
+django==5.2.14
+requests
+pillow
+psycopg2-binary  # если используете PostgreSQL в Docker
